@@ -1,9 +1,10 @@
 # config valid only for current version of Capistrano
 lock '3.6.0'
 
-set :application, 'my_app_name'
-set :repo_url, 'git@example.com:me/my_repo.git'
-
+set :application, 'sms_scheduler'
+set :repo_url, 'git@github.com:johnnyb/sms_scheduler.git'
+set :branch, 'master'
+set :deploy_to, '/opt/webhosting/sites/scheduler.newmedio.com'
 # Default branch is :master
 # ask :branch, `git rev-parse --abbrev-ref HEAD`.chomp
 
