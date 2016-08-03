@@ -1,0 +1,20 @@
+<h3>Scheduled Messages</h3>
+
+Source: <%= params[:source_url] %>
+
+<table>
+<tr>
+	<th>Destination</th>
+	<th>Message</th>
+	<th>Time to Send</th>
+	<th>Sent At</th>
+</tr>
+<% ScheduledMessage.send_at_order.for_source_url(params[:source_url]).each do |msg| %>
+	<tr>
+		<td><%= msg.destination_phone %></td>
+		<td><%= msg.message %></td>
+		<td><%= msg.send_at %></td>
+		<td><%= msg.sent_at %></td>
+	</tr>
+<% end %>
+</table>

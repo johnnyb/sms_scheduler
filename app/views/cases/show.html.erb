@@ -1,0 +1,95 @@
+<%= form_tag ScheduledMessage.new, :remote => true, :id => "schedule-form" do %>
+	<p>
+	Case #: <%= @oscn_case.case_number %>
+	</p>
+
+	<p>
+	Plaintiff: <%= @oscn_case.plaintiff %>
+	</p>
+
+	<p>
+	Defendant: <%= @oscn_case.defendant %>
+	</p>
+
+	<p>
+	<label>Phone Numbers (separated by comma)</label>
+	<input type="text" name="phone_numbers" id="phone-numbers-field" />
+	</p>
+
+	<h3>Times</h3>
+	<p>
+		<input type="text" name="time1_qty" value="1" /> <select name="time1_type"><option value='hours'>Hours</option><option value="days" selected="selected">Days</option></select><br />
+		<input type="text" name="time2_qty" value="2" /> <select name="time2_type"><option value='hours' selected="selected">Hours</option><option value="days">Days</option></select><br />
+	</p>
+	<%= hidden_field_tag "source_url", @oscn_case.source_url %>
+	<%= hidden_field_tag "source_type", "legal" %>
+	<%= hidden_field_tag "source_subtype", "oscn" %>
+	<%= hidden_field_tag "message", "", :id => "message-field" %>
+	<%= hidden_field_tag "send_at", "", :id => "send-at-field" %>
+
+	<script type="text/javascript">
+	var oscn_info = <%= raw @oscn_case.to_json %>;
+	function scheduled_message_create(idx) {
+		if($("#phone-numbers-field").val() == "") {
+			alert("Please fill out a phone number");
+			return;
+		}
+		if($("input[name=time1_qty]").val() == "") {
+			alert("Please fill out scheduling fields");
+			return;
+		}
+		var evt_info = oscn_info.events[idx];
+		var court_date = new Date();
+		court_date.setTime(Date.parse(evt_info.date));
+		$("#message-field").val("Reminder: " + oscn_info.defendant + " has a court date scheduled on " + court_date.toDateString() + " at " + court_date.toTimeString() + ".  Please arrive promptly.");
+		var i = 1;
+		var keepgoing = true;
+		while(keepgoing) {
+			var qty = $("input[name=time" + i + "_qty]").val()	
+			if(qty == null) {
+				keepgoing = false;
+			} else {
+				var qtype = $("input[name=time" + i + "_type]").val();
+				var offset;
+				if(qtype == "days") {
+					offset = 1000 * 60 * 60 * 24;
+				} else {	
+					offset = 1000 * 60 * 60;
+				}
+				var tmp_date = new Date();
+				tmp_date.setTime(court_date.getTime() + offset);
+				$("#send-at-field").val(tmp_date.toISOString());
+				$.ajax("<%= url_for(ScheduledMessage.new) %>", {
+					method: "POST",
+					data: $("#schedule-form").serialize(),
+					success: function() {
+						$("#verify-link").show();
+						$("#case-row-" + idx + " .link-cell").html("Scheduled");
+					},
+					error: function() {
+						alert("An error occurred scheduling this message");
+					}
+				});
+			}
+			i++;
+		}
+	}
+	</script>
+
+	<table>
+	<tr><th>Date</th><th>Event</th><th>Party</th><th>Docket</th></tr>
+	<% @oscn_case.events.each_with_index do |evt, idx| %>
+		<tr id="case-row-<%= idx %>">
+			<td><%= evt[:date] %></td>
+			<td><%= evt[:event] %></td>
+			<td><%= evt[:party] %></td>
+			<td><%= evt[:docket] %></td>
+			<td class="link-cell"><a href="#" onclick="scheduled_message_create(<%= idx %>); return false;">Schedule Message</a>
+		</tr>
+	<% end %>
+	</table>
+
+	<p>
+		<%= link_to "Verify scheduled messages for this case", scheduled_messages_path(:source_url => @oscn_case.source_url), :id => "verify-link" %>
+	</p>
+<% end %>
